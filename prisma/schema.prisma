@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Employees {
+  id           Int            @id @default(autoincrement())
+  name         String
+  cpf          String         @unique @db.Char(11)
+  email        String         @unique
+  password     String
+  position     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  active       Boolean        @default(true)
+  orders       Orders[]
+  transactions Transactions[]
+}
+
+model Customers {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cpf       String   @unique @db.Char(11)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  orders    Orders[]
+}
+
+model Categories {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique
+  products Products[]
+}
+
+model Products {
+  id           Int            @id @default(autoincrement())
+  name         String
+  price        Decimal        @db.Decimal(10, 2)
+  active       Boolean        @default(true)
+  description  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  category     Categories     @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  transactions Transactions[]
+}
+
+enum OrderStates {
+  PENDING
+  PAID
+  CANCELLED
+  COMPLETED
+}
+
+model Orders {
+  id           Int            @id @default(autoincrement())
+  state        OrderStates
+  totalValue   Decimal        @db.Decimal(10, 2)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  completedAt  DateTime?
+  customer     Customers      @relation(fields: [customerId], references: [id])
+  customerId   Int
+  employee     Employees      @relation(fields: [employeeId], references: [id])
+  employeeId   Int
+  transactions Transactions[]
+}
+
+enum TransactionType {
+  INFLOW
+  OUTFLOW
+}
+
+enum TransactionReason {
+  SALE
+  RETURN
+  STOCK_ADDITION
+  MANUAL_ADJUSTMENT
+  LOSS
+}
+
+model Transactions {
+  id         Int               @id @default(autoincrement())
+  createdAt  DateTime          @default(now())
+  quantity   Int
+  type       TransactionType
+  reason     TransactionReason
+  product    Products          @relation(fields: [productId], references: [id])
+  productId  Int
+  employee   Employees         @relation(fields: [employeeId], references: [id])
+  employeeId Int
+  order      Orders            @relation(fields: [orderId], references: [id])
+  orderId    Int
+}
