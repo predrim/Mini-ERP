@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { z } from 'zod';
+import bcrypt from 'bcrypt';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -41,7 +42,13 @@ const updateEmployeeSchema = z.object({
 
 export const listEmployees = async (req: Request, res: Response) => {
     const employees = await prisma.employees.findMany();
-    res.status(200).json(employees)
+
+    let employeesWithoutPassword = employees.map(employee => {
+        const { password, ...employeeWithoutPassword} = employee;
+        return employeeWithoutPassword;    
+    });
+
+    res.status(200).json(employeesWithoutPassword);
 };
 
 export const getEmployeeById = async (req: Request, res: Response) => {
@@ -52,7 +59,8 @@ export const getEmployeeById = async (req: Request, res: Response) => {
     });
 
     if (foundEmployee) {
-        res.status(200).json(foundEmployee);
+        const { password, ...employeeWithoutPassword } = foundEmployee;
+        res.status(200).json(employeeWithoutPassword);
     }
     else {
         res.status(404).json("Employee not found");
@@ -61,18 +69,20 @@ export const getEmployeeById = async (req: Request, res: Response) => {
 
 export const createEmployee = async (req: Request, res: Response) => {
     try {
-        const validatedData = createEmployeeSchema.parse(req.body)        
+        const validatedData = createEmployeeSchema.parse(req.body);
+        const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
         const newEmployee = await prisma.employees.create({
             data: {
                 name: validatedData.name,
                 cpf: validatedData.cpf,
                 email: validatedData.email,
-                password: validatedData.password,
+                password: hashedPassword,
                 position: validatedData.position
             }
         });
-        res.status(201).json(newEmployee)
+        const { password, ...employeeWithoutPassword } = newEmployee;
+        res.status(201).json(employeeWithoutPassword)
     }
     catch (error) {
         res.status(400).json({error: "Invalid Data"})
@@ -83,15 +93,20 @@ export const updateEmployee = async (req: Request, res: Response) => {
     try {
         const validatedData = updateEmployeeSchema.parse(req.body);
 
+        let dataToUpdate: any = {
+            name: validatedData.name,
+            cpf: validatedData.cpf,
+            email: validatedData.email,
+            position: validatedData.position
+        }
+
+        if (validatedData.password) {
+            dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
+        }
+        
         const updatedEmployee = await prisma.employees.update({
             where: {id: Number(req.params.id)},
-            data: {
-                name: validatedData.name,
-                cpf: validatedData.cpf,
-                email: validatedData.email,
-                password: validatedData.password,
-                position: validatedData.position
-            }
+            data: dataToUpdate
         });
 
         res.status(200).json(updatedEmployee);
@@ -107,7 +122,8 @@ export const deleteEmployee = async (req: Request, res: Response) => {
         const deletingEmployee = await prisma.employees.delete({
             where: { id: Number(req.params.id) },
         });
-        res.status(200).json(deletingEmployee);
+        const {password, ...employeeWithoutPassword} = deletingEmployee;
+        res.status(200).json(employeeWithoutPassword);
     }
     catch {
         res.status(404).json("Employee not found");
