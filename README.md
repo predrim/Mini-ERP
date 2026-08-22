@@ -5,3 +5,5 @@ Typescript
 Express
 PostgreSQL
 Prisma
+Bcrypt
+Zod
