@@ -18,7 +18,7 @@ const updateCustomerSchema = z.object({
 
 export const listCustomers = async (req: Request, res: Response) => {
     const customers = await prisma.customers.findMany();
-    res.status(200).json(customers)
+    res.status(200).json(customers);
 };
 
 export const getCustomerById = async (req: Request, res: Response) => {

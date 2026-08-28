@@ -20,7 +20,7 @@ model Employees {
   password     String
   position     String
   createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt()
   active       Boolean        @default(true)
   orders       Orders[]
   transactions Transactions[]
@@ -31,7 +31,7 @@ model Customers {
   name      String
   cpf       String   @unique @db.Char(11)
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
   orders    Orders[]
 }
 
@@ -48,13 +48,14 @@ model Products {
   active       Boolean        @default(true)
   description  String?
   createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt()
   category     Categories     @relation(fields: [categoryId], references: [id])
   categoryId   Int
   transactions Transactions[]
+  orderItems   OrderItems[]
 }
 
-enum OrderStates {
+enum OrderStatuses {
   PENDING
   PAID
   CANCELLED
@@ -63,16 +64,29 @@ enum OrderStates {
 
 model Orders {
   id           Int            @id @default(autoincrement())
-  state        OrderStates
+  status       OrderStatuses  @default(PENDING)
   totalValue   Decimal        @db.Decimal(10, 2)
   createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt()
   completedAt  DateTime?
   customer     Customers      @relation(fields: [customerId], references: [id])
   customerId   Int
   employee     Employees      @relation(fields: [employeeId], references: [id])
   employeeId   Int
   transactions Transactions[]
+  orderItems   OrderItems[]
+}
+
+model OrderItems {
+  id        Int      @id @default(autoincrement())
+  quantity  Int
+  unitPrice Decimal  @db.Decimal(10, 2)
+  order     Orders   @relation(fields: [orderId], references: [id])
+  orderId   Int
+  product   Products @relation(fields: [productId], references: [id])
+  productId Int
+
+  @@unique([orderId, productId])
 }
 
 enum TransactionType {
@@ -98,6 +112,6 @@ model Transactions {
   productId  Int
   employee   Employees         @relation(fields: [employeeId], references: [id])
   employeeId Int
-  order      Orders            @relation(fields: [orderId], references: [id])
-  orderId    Int
+  order      Orders?           @relation(fields: [orderId], references: [id])
+  orderId    Int?
 }
