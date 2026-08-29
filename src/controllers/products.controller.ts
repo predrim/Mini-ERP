@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { z } from 'zod';
+import { calculateProductStock } from '../utils/stocks';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -26,9 +27,20 @@ export const listProducts = async (req: Request, res: Response) => {
         include: {
             category: true,
         }
-
     });
-    res.status(200).json(products)
+
+    const productsWithStock = [];
+
+    for (const product of products) {
+        const currentStock = await calculateProductStock(product.id, prisma);
+
+        productsWithStock.push({
+            ...product,
+            stock: currentStock
+        });
+    }
+
+    res.status(200).json(productsWithStock);
 };
 
 export const getProductById = async (req: Request, res: Response) => {
@@ -42,7 +54,8 @@ export const getProductById = async (req: Request, res: Response) => {
     });
 
     if (foundProduct) {
-        res.status(200).json(foundProduct);
+        const currentStock = await calculateProductStock(foundProduct.id, prisma);
+        res.status(200).json({...foundProduct, stock: currentStock});
     }
     else {
         res.status(404).json("Product not found");
