@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { z } from 'zod';
+import { calculateProductStock } from '../utils/stocks';
 
 const adapter: PrismaPg = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma: PrismaClient = new PrismaClient({ adapter });
@@ -83,7 +84,13 @@ export const createOrder = async (req: Request, res: Response) => {
 
                 if (!product) {
                     throw new Error(`Product ${item.productId} not found`);
-                }
+                };
+
+                const productStock: number = await calculateProductStock(item.productId, tx);
+
+                if (item.quantity > productStock) {
+                    throw Error(`Insufficient items in stock for ${product.name}.`)
+                };
 
                 products.push({
                     product,
@@ -123,8 +130,15 @@ export const createOrder = async (req: Request, res: Response) => {
         res.status(201).json(result);
     }
     catch (error) {
-        res.status(400).json({ error: "Error in processing order" });
-    }
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else if (error instanceof Error) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(400).json({ error: "Error in processing order" });
+        };
+    };
 };
 
 export const updateOrder = async (req: Request, res: Response) => {
@@ -151,7 +165,7 @@ export const updateOrder = async (req: Request, res: Response) => {
                 where: {
                     orderId: foundOrder.id
                 }
-            })
+            });
 
             const products: {
                 product: { id: number; price: any };
@@ -167,7 +181,13 @@ export const updateOrder = async (req: Request, res: Response) => {
 
                 if (!product) {
                     throw new Error(`Product ${item.productId} not found`);
-                }
+                };
+
+                const productStock: number = await calculateProductStock(item.productId, tx);
+
+                if (item.quantity > productStock) {
+                    throw Error(`Insufficient items in stock for ${product.name}.`)
+                };
 
                 products.push({
                     product,
@@ -210,8 +230,15 @@ export const updateOrder = async (req: Request, res: Response) => {
         res.status(200).json(result);
     }
     catch (error) {
-        res.status(400).json({ error: "Error in updating order" });
-    }
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else if (error instanceof Error) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(400).json({ error: "Error in updating order" });
+        };
+    };
 };
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
@@ -230,11 +257,11 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             if (!order) {
                 throw new Error("Order not found");
             }
-            
+
             if (order.status === "CANCELLED" || order.status === "COMPLETED") {
                 throw new Error("This order can no longer be updated");
             }
-            
+
             if (validatedData.status === "PAID" && order.status !== "PENDING") {
                 throw new Error("Only pending orders can be paid");
             }
@@ -248,7 +275,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                     orderId: orderId
                 }
             });
-            
+
             const newStatus = await tx.orders.update({
                 where: {
                     id: orderId
@@ -260,7 +287,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                         : undefined,
                 }
             });
-            
+
             if (validatedData.status === "PAID" && order.status === "PENDING") {
                 for (const item of orderItems) {
                     await tx.transactions.create({
@@ -296,6 +323,13 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         res.status(200).json(result);
     }
     catch (error) {
-        res.status(400).json({ error: "Error in updating order status" });
-    }
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else if (error instanceof Error) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(400).json({ error: "Error in updating order status" });
+        };
+    };
 };
