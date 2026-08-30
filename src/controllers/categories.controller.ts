@@ -21,7 +21,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
             id: Number(req.params.id),
         }
     });
-    
+
     if (foundCategory) {
         res.status(200).json(foundCategory);
     }
@@ -38,11 +38,16 @@ export const createCategory = async (req: Request, res: Response) => {
             data: {
                 name: validatedData.name,
             }
-        }); 
+        });
         res.status(201).json(newCategory);
     }
     catch (error) {
-        res.status(400).json({error: "Invalid Data"})
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else {
+            res.status(400).json({ error: "Invalid Data" })
+        };
     }
 };
 
@@ -54,11 +59,16 @@ export const updateCategory = async (req: Request, res: Response) => {
             where: { id: Number(req.params.id) },
             data: { name: validatedData.name }
         });
-        
+
         res.status(200).json(updatedCategory);
     }
-    catch {
-        res.status(400).json("Invalid Data");
+    catch (error) {
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else {
+            res.status(400).json("Invalid Data");
+        };
     };
 };
 

@@ -13,13 +13,13 @@ const createEmployeeSchema = z.object({
     email: z.email(),
     password: z.string()
         .trim()
-        .min(1, {message: "A password is required."})
-        .min(8, {message: "The password must be at least 8 characters long."})
-        .max(100, {message: "The password is too long."})
-        .regex(/[A-Z]/, {message: "The password must contain at least one uppercase letter."})
-        .regex(/[a-z]/, {message: "The password must contain at least one lowercase letter."})
-        .regex(/[0-9]/, {message: "The password must contain at least one number."})
-        .regex(/[^A-Za-z0-9]/, {message: "The password must contain at least one special character."}),
+        .min(1, { message: "A password is required." })
+        .min(8, { message: "The password must be at least 8 characters long." })
+        .max(100, { message: "The password is too long." })
+        .regex(/[A-Z]/, { message: "The password must contain at least one uppercase letter." })
+        .regex(/[a-z]/, { message: "The password must contain at least one lowercase letter." })
+        .regex(/[0-9]/, { message: "The password must contain at least one number." })
+        .regex(/[^A-Za-z0-9]/, { message: "The password must contain at least one special character." }),
     position: z.string()
 })
 
@@ -29,13 +29,13 @@ const updateEmployeeSchema = z.object({
     email: z.email().optional(),
     password: z.string()
         .trim()
-        .min(1, {message: "A password is required."})
-        .min(8, {message: "The password must be at least 8 characters long."})
-        .max(100, {message: "The password is too long."})
-        .regex(/[A-Z]/, {message: "The password must contain at least one uppercase letter."})
-        .regex(/[a-z]/, {message: "The password must contain at least one lowercase letter."})
-        .regex(/[0-9]/, {message: "The password must contain at least one number."})
-        .regex(/[^A-Za-z0-9]/, {message: "The password must contain at least one special character."})
+        .min(1, { message: "A password is required." })
+        .min(8, { message: "The password must be at least 8 characters long." })
+        .max(100, { message: "The password is too long." })
+        .regex(/[A-Z]/, { message: "The password must contain at least one uppercase letter." })
+        .regex(/[a-z]/, { message: "The password must contain at least one lowercase letter." })
+        .regex(/[0-9]/, { message: "The password must contain at least one number." })
+        .regex(/[^A-Za-z0-9]/, { message: "The password must contain at least one special character." })
         .optional(),
     position: z.string().optional()
 })
@@ -44,8 +44,8 @@ export const listEmployees = async (req: Request, res: Response) => {
     const employees = await prisma.employees.findMany();
 
     let employeesWithoutPassword = employees.map(employee => {
-        const { password, ...employeeWithoutPassword} = employee;
-        return employeeWithoutPassword;    
+        const { password, ...employeeWithoutPassword } = employee;
+        return employeeWithoutPassword;
     });
 
     res.status(200).json(employeesWithoutPassword);
@@ -85,7 +85,12 @@ export const createEmployee = async (req: Request, res: Response) => {
         res.status(201).json(employeeWithoutPassword)
     }
     catch (error) {
-        res.status(400).json({error: "Invalid Data"})
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else {
+            res.status(400).json({ error: "Invalid Data" })
+        };
     }
 };
 
@@ -103,16 +108,21 @@ export const updateEmployee = async (req: Request, res: Response) => {
         if (validatedData.password) {
             dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
         }
-        
+
         const updatedEmployee = await prisma.employees.update({
-            where: {id: Number(req.params.id)},
+            where: { id: Number(req.params.id) },
             data: dataToUpdate
         });
 
         res.status(200).json(updatedEmployee);
     }
-    catch {
-        res.status(400).json("Invalid Data");
+    catch (error) {
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else {
+            res.status(400).json("Invalid Data");
+        };
 
     };
 };
@@ -122,7 +132,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
         const deletingEmployee = await prisma.employees.delete({
             where: { id: Number(req.params.id) },
         });
-        const {password, ...employeeWithoutPassword} = deletingEmployee;
+        const { password, ...employeeWithoutPassword } = deletingEmployee;
         res.status(200).json(employeeWithoutPassword);
     }
     catch {

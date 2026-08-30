@@ -49,7 +49,12 @@ export const createCustomer = async (req: Request, res: Response) => {
         res.status(201).json(newCustomer)
     }
     catch (error) {
-        res.status(400).json({error: "Invalid Data"})
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else {
+            res.status(400).json({ error: "Invalid Data" });
+        };
     }
 };
 
@@ -67,8 +72,13 @@ export const updateCustomer = async (req: Request, res: Response) => {
 
         res.status(200).json(updatedCustomer);
     }
-    catch {
-        res.status(400).json("Invalid Data");
+    catch (error) {
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+        }
+        else {
+            res.status(400).json("Invalid Data");
+        };
 
     };
 };
