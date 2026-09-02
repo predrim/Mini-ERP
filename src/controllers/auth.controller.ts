@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { z } from 'zod';
+import { positive, z } from 'zod';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -33,8 +34,17 @@ export const loginHandler = async (req: Request, res: Response) => {
             throw new Error(invalidCredentials);
         };
 
-        const { password, ...newLogin } = foundRegister;
-        res.status(200).json(newLogin);
+        const token = jwt.sign(
+            {
+                id: foundRegister.id,
+                position: foundRegister.position
+            },
+            process.env.JWT_SECRET as string,
+            { expiresIn: '8h' }
+        );
+
+        const { password, ...employeeData } = foundRegister;
+        res.status(200).json({employee: employeeData, token: token});
 
     }
     catch (error) {
