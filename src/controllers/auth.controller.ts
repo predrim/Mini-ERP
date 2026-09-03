@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { positive, z } from 'zod';
+import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
