@@ -23,5 +23,5 @@ app.use('/auth', authRoutes);
 
 app.listen(
     PORT,
-    () => console.log(`it's alive on http://localhost:${PORT}`)
+    () => console.log(`listening on port http://localhost:${PORT}`)
 );
