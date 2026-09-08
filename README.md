@@ -1,9 +1,11 @@
 Mini ERP - Projeto pessoal
 
 Tecnologias:
-Typescript
-Express
-PostgreSQL
-Prisma
-Bcrypt
-Zod
+Typescript;
+Express;
+PostgreSQL;
+Prisma;
+Bcrypt;
+Zod;
+JsonWebToken;
+Docker;
