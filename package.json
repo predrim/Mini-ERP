@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch src/app.ts"
+    "server": "npx prisma db push && tsx watch src/app.ts"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +29,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.2",
-    "@types/pg": "^8.21.0",
+    "@types/pg": "^8.23.1",
     "prisma": "^7.9.1",
     "tsx": "^4.23.5"
   }

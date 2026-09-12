@@ -9,7 +9,7 @@ import transactionRoutes from './routes/transactions.routes';
 import orderRoutes from './routes/orders.routes';
 import authRoutes from './routes/auth.routes';
 const app = express();
-const PORT = 3000;
+const PORT = 9000;
 
 app.use(express.json());
 app.use(cors());
