@@ -1,3 +1,6 @@
+// This file is for creating the admin user.
+// docker exec -it mini-erp-backend-1 npx tsx backend/prisma/seed.ts
+
 import { PrismaClient } from '../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -20,8 +23,8 @@ async function main() {
         },
     });
 
-    console.log(`Funcionário criado com ID: ${employee.id}`);
-}
+    console.log(`Employee created with ID: ${employee.id}`);
+};
 
 main()
     .catch((e) => {

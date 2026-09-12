@@ -1,6 +1,6 @@
 services:
     backend:
-        build: .
+        build: ./backend
         ports:
             - '9000:9000'
         environment:
