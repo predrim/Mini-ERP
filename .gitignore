@@ -1,0 +1,14 @@
+node_modules/
+# Keep environment variables out of version control
+
+.env
+.env.*
+
+backend/src/generated/prisma/
+
+.vscode/
+.windsurf/
+.claude/
+.agents/
+dist/
+build/
